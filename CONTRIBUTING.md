@@ -15,8 +15,9 @@ These are just guidelines, not rules, and feel free to propose changes to this d
 - Create a topic branch where you want to base your work.
     - This is usually the ```master``` branch.
 - Make commits.
+- It is highly recommended to create a build folder and run `cmake ..` from there. Otherwise modify the .gitignore or git add files selectively.
 - Make sure you have added the necessary tests for your changes.
-- Make sure you're sticking with our code style. You can run [`clang-format`](http://clang.llvm.org/docs/ClangFormat.html) manually or by using [pre-commit hook](https://github.com/arraiy/dacron/blob/master/etc/git/hooks/pre-commit). Currently `clang-format-4.0` is used
+- Make sure you're sticking with our code style. You can run [`clang-format`](http://clang.llvm.org/docs/ClangFormat.html) manually or by using [pre-commit hook](https://github.com/arraiy/dacron/blob/master/etc/git/hooks/pre-commit). Currently `clang-format-4.0` is used (if installed: `make clang-format && make clang-tidy && make-clang-check`. To run it manually from the root folder: `clang-format-4.0 -i -style=file file1 file2...`
 - Submit a pull request.
 - Make sure all CI builds are passed.
 
