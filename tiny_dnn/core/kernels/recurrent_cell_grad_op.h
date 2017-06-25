@@ -21,34 +21,45 @@ class RecurrentCellGradOp : public core::OpKernel {
   void compute(core::OpKernelContext &context) override {
     auto params = OpKernel::params_->recurrent_cell();
     // incoming/outcoming data
-    const tensor_t &prev_out = context.input(0);
-    const tensor_t &h        = context.input(1);
-    const tensor_t &U        = context.input(2);
-    const tensor_t &W        = context.input(3);
-    const tensor_t &V        = context.input(4);
-    tensor_t &dU             = context.input_grad(2);
-    tensor_t &dW             = context.input_grad(3);
-    tensor_t &dV             = context.input_grad(4);
-    tensor_t *db = params.has_bias_ ? &context.input_grad(5) : nullptr;
-    tensor_t *dc = params.has_bias_ ? &context.input_grad(6) : nullptr;
-    tensor_t &prev_output_delta = context.input_grad(0);
-    tensor_t &prev_state_delta  = context.input_grad(1);
-    tensor_t &curr_output_delta = context.output_grad(0);
-    tensor_t &curr_state_delta  = context.output_grad(1);
-    const tensor_t &out_state   = context.output(1);
-    tensor_t dummy;  // need lvalue for non-const reference
+    // TODO(Randl): Remove once layers forward and backward by themself.
+    const Tensor<float_t> prev_out(context.input(0));
+    const Tensor<float_t> h(context.input(1));
+    const Tensor<float_t> U(context.input(2));
+    const Tensor<float_t> W(context.input(3));
+    const Tensor<float_t> V(context.input(4));
+    Tensor<float_t> dU(context.input_grad(2));
+    Tensor<float_t> dW(context.input_grad(3));
+    Tensor<float_t> dV(context.input_grad(4));
+    Tensor<float_t> db = params.has_bias_ ? Tensor<float_t>(context.input_grad(5)) : Tensor<float_t>();
+    Tensor<float_t> dc = params.has_bias_ ? Tensor<float_t>(context.input_grad(6)) : Tensor<float_t>();
+    Tensor<float_t> prev_output_delta(context.input_grad(0));
+    Tensor<float_t> prev_state_delta(context.input_grad(1));
+    Tensor<float_t> curr_output_delta(context.output_grad(0));
+    Tensor<float_t> curr_state_delta(context.output_grad(1));
+    const Tensor<float_t> out_state(context.output(1));
 
     // initialize outputs
-    fill_tensor(prev_output_delta, float_t{0});
-    fill_tensor(prev_state_delta, float_t{0});
+    prev_output_delta.fill(0);
+    prev_state_delta.fill(0);
 
     // call the algorithm depending on the selected engine type
 
+    const core::backend_t engine = context.engine();
+
     kernels::recurrent_cell_op_internal(
-      prev_out, h, U[0], W[0], V[0], dU, dW, dV, params.has_bias_ ? *db : dummy,
-      params.has_bias_ ? *dc : dummy, curr_output_delta, curr_state_delta,
+      prev_out, h, U, W, V, dU, dW, dV, db,
+      dc, curr_output_delta, curr_state_delta,
       prev_output_delta, prev_state_delta, out_state, params,
       context.parallelize());
+      context.input_grad(0) = prev_output_delta.toTensor();
+      context.input_grad(1) = prev_state_delta.toTensor();
+      context.input_grad(2) = dU.toTensor();
+      context.input_grad(3) = dW.toTensor();
+      context.input_grad(4) = dV.toTensor();
+      if (params.has_bias_) {
+        context.input_grad(5) = db.toTensor();
+        context.input_grad(6) = dc.toTensor();
+      }
   }
 };
 

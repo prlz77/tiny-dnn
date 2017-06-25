@@ -21,19 +21,20 @@ class RecurrentCellOp : public core::OpKernel {
     auto params = OpKernel::params_->recurrent_cell();
 
     // incomimg/outcoming data
-    const tensor_t &in_data = context.input(0);
-    const tensor_t &prev_h  = context.input(1);
-    const tensor_t &U       = context.input(2);
-    const tensor_t &W       = context.input(3);
-    const tensor_t &V       = context.input(4);
-    const tensor_t *bias    = params.has_bias_ ? &context.input(5) : nullptr;
-    const tensor_t *c       = params.has_bias_ ? &context.input(6) : nullptr;
-    tensor_t &out_data      = context.output(0);
-    tensor_t &next_h        = context.output(1);
+    // TODO(Randl): Remove once layers forward and backward by themself.
+    const Tensor<float_t> in_data(context.input(0));
+    const Tensor<float_t> prev_h(context.input(1));
+    const Tensor<float_t> U(context.input(2));
+    const Tensor<float_t> W(context.input(3));
+    const Tensor<float_t> V(context.input(4));
+    const Tensor<float_t> bias = params.has_bias_ ? Tensor<float_t>(context.input(5)) : Tensor<float_t>();
+    const Tensor<float_t> c = params.has_bias_ ? Tensor<float_t>(context.input(6)) : Tensor<float_t>();
+    Tensor<float_t> out_data(context.output(0));
+    Tensor<float_t> next_h(context.output(1));
 
     // initialize outputs
-    fill_tensor(out_data, float_t{0});
-    fill_tensor(next_h, float_t{0});
+    out_data.fill(0);
+    next_h.fill(0);
 
     // call the algorithm depending  on the selected engine type
 
@@ -41,10 +42,11 @@ class RecurrentCellOp : public core::OpKernel {
 
     if (engine == core::backend_t::internal || engine == core::backend_t::avx) {
       kernels::recurrent_cell_op_internal(
-        in_data, prev_h, U[0], W[0], V[0],
-        params.has_bias_ ? (*bias)[0] : vec_t(),
-        params.has_bias_ ? (*c)[0] : vec_t(), out_data, next_h, params,
+        in_data, prev_h, U, W, V,
+        bias, c, out_data, next_h, params,
         context.parallelize());
+      // TODO(Randl): Remove once layers forward and backward by themself.
+      context.output(0) = out_data.toTensor();
     } else {
       throw nn_error("Not supported engine: " + to_string(engine));
     }
