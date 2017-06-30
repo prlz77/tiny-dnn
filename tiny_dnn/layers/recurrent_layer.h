@@ -37,18 +37,18 @@ class recurrent_layer : public layer {
             cell_obj.output_order()),
             cell_(std::move(cell_obj)),
             seq_len_(seq_len) {
-        cell_.init_backend(static_cast<layer *>(this));
+        layer::set_backend_type(cell_.get_backend_type());
+        cell_.init_backend(layer::device());
   }
-/*
+
   // move constructor
-  recurrent_cell_layer(recurrent_cell_layer &&other)
+  recurrent_layer(recurrent_layer &&other)
     : layer(std::move(other)),
-      params_(std::move(other.params_)),
-      kernel_fwd_(std::move(other.kernel_fwd_)),
-      kernel_back_(std::move(other.kernel_back_)) {
-    init_backend(std::move(other.engine()));
+      cell_(std::move(other.cell_)),
+      seq_len_(std::move(other.seq_len_)) {
+    cell_.init_backend(layer::device());
   }
-*/
+
   size_t fan_in_size(size_t i) const override {
     return cell_.in_shape()[i].width_;
   }
@@ -67,14 +67,14 @@ class recurrent_layer : public layer {
 
   void forward_propagation(const std::vector<tensor_t *> &in_data,
                            std::vector<tensor_t *> &out_data) override {
-      cell_.forward_propagation(in_data, out_data);
+      cell_.forward_propagation(in_data, out_data, layer::parallelize(), layer::engine());
   }
 
   void back_propagation(const std::vector<tensor_t *> &in_data,
                         const std::vector<tensor_t *> &out_data,
                         std::vector<tensor_t *> &out_grad,
                         std::vector<tensor_t *> &in_grad) override {
-      cell_.back_propagation(in_data, out_data, out_grad, in_grad);
+      cell_.back_propagation(in_data, out_data, out_grad, in_grad, layer::parallelize(), layer::engine());
   }
 
   std::string layer_type() const override { return cell_.layer_type(); }

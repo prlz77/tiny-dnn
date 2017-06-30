@@ -63,17 +63,19 @@ class recurrent_cell : public cell {
                        bool has_bias                = true,
                        activation_layer *activation = new tanh_layer,
                        backend_t backend_type       = core::default_engine())
-           :backend_type_(backend_type ){
+           :cell(backend_type){
     set_params(in_dim, out_dim, has_bias, activation);
   }
 
 
   // move constructor
   recurrent_cell(recurrent_cell &&other)
-    : params_(std::move(other.params_)),
+    : cell(std::move(other)),
+      params_(std::move(other.params_)),
+      fwd_ctx_(std::move(other.fwd_ctx_)),
+      bwd_ctx_(std::move(other.bwd_ctx_)),
       kernel_fwd_(std::move(other.kernel_fwd_)),
-      kernel_back_(std::move(other.kernel_back_)),
-      backend_type_(std::move(other.backend_type_)) {
+      kernel_back_(std::move(other.kernel_back_)) {
   }
 
 
@@ -111,11 +113,13 @@ class recurrent_cell : public cell {
   }
 
   void forward_propagation(const std::vector<tensor_t *> &in_data,
-                           std::vector<tensor_t *> &out_data) {
+                           std::vector<tensor_t *> &out_data,
+                           const bool parallelize,
+                           const core::backend_t engine) {
     // forward fully connected op context
     fwd_ctx_.set_in_out(in_data, out_data);
-    fwd_ctx_.setParallelize(layer_->parallelize());
-    fwd_ctx_.setEngine(layer_->engine());
+    fwd_ctx_.setParallelize(parallelize);
+    fwd_ctx_.setEngine(engine);
 
     // launch recurrent kernel
     kernel_fwd_->compute(fwd_ctx_);
@@ -124,11 +128,13 @@ class recurrent_cell : public cell {
   void back_propagation(const std::vector<tensor_t *> &in_data,
                         const std::vector<tensor_t *> &out_data,
                         std::vector<tensor_t *> &out_grad,
-                        std::vector<tensor_t *> &in_grad) {
+                        std::vector<tensor_t *> &in_grad,
+                        const bool parallelize,
+                        const core::backend_t engine) {
     // backward fully connected op context
     bwd_ctx_.set_in_out(in_data, out_data, out_grad, in_grad);
-    bwd_ctx_.setParallelize(layer_->parallelize());
-    bwd_ctx_.setEngine(layer_->engine());
+    bwd_ctx_.setParallelize(parallelize);
+    bwd_ctx_.setEngine(engine);
 
     // launch recurrent kernel
     kernel_back_->compute(bwd_ctx_);
@@ -153,21 +159,15 @@ class recurrent_cell : public cell {
     params_.activation_ = std::shared_ptr<activation_layer>(activation);
   }
 
-  void init_backend(layer * layer_p) {
-      layer_ = layer_p;
-      layer_->set_backend_type(backend_type_);
-      CNN_UNREFERENCED_PARAMETER(backend_type_);
-      fwd_ctx_ = OpKernelContext();
-      bwd_ctx_ = OpKernelContext();
+  void init_backend(Device* device) {
+      CNN_UNREFERENCED_PARAMETER(cell::get_backend_type());
       core::OpKernelConstruction ctx =
-              core::OpKernelConstruction(layer_->device(), &params_);
+              core::OpKernelConstruction(device, &params_);
       kernel_fwd_.reset(new RecurrentCellOp(ctx));
       kernel_back_.reset(new RecurrentCellGradOp(ctx));
   }
 
  private:
-
-  layer * layer_;
 
   /* The layer parameters */
   recurrent_cell_params params_;
@@ -181,8 +181,6 @@ class recurrent_cell : public cell {
   /* Forward and backward ops */
   std::shared_ptr<core::OpKernel> kernel_fwd_;
   std::shared_ptr<core::OpKernel> kernel_back_;
-
-  backend_t backend_type_;
 };
 
 }  // namespace tiny_dnn
