@@ -10,8 +10,8 @@
 #include "tiny_dnn/activations/tanh_layer.h"
 #include "tiny_dnn/core/kernels/recurrent_cell_grad_op.h"
 #include "tiny_dnn/core/kernels/recurrent_cell_op.h"
-#include "tiny_dnn/layers/layer.h"
 #include "tiny_dnn/layers/cell.h"
+#include "tiny_dnn/layers/layer.h"
 
 namespace tiny_dnn {
 
@@ -29,7 +29,6 @@ namespace tiny_dnn {
  **/
 class recurrent_cell : public cell {
  public:
-
   inline std::vector<vector_type> input_order() {
     if (params_.has_bias_) {
       return {vector_type::data,    // input vector
@@ -48,8 +47,8 @@ class recurrent_cell : public cell {
     }
   }
   inline std::vector<vector_type> output_order() {
-    return {vector_type::data,    // input vector
-            vector_type::aux};    // input state (h(t-1))
+    return {vector_type::data,  // input vector
+            vector_type::aux};  // input state (h(t-1))
   }
 
   /**
@@ -59,14 +58,13 @@ class recurrent_cell : public cell {
    * @param activation [in] activation function to be used internally
    **/
   recurrent_cell(size_t in_dim,
-                       size_t out_dim,
-                       bool has_bias                = true,
-                       activation_layer *activation = new tanh_layer,
-                       backend_t backend_type       = core::default_engine())
-           :cell(backend_type){
+                 size_t out_dim,
+                 bool has_bias                = true,
+                 activation_layer *activation = new tanh_layer,
+                 backend_t backend_type       = core::default_engine())
+    : cell(backend_type) {
     set_params(in_dim, out_dim, has_bias, activation);
   }
-
 
   // move constructor
   recurrent_cell(recurrent_cell &&other)
@@ -75,35 +73,27 @@ class recurrent_cell : public cell {
       fwd_ctx_(std::move(other.fwd_ctx_)),
       bwd_ctx_(std::move(other.bwd_ctx_)),
       kernel_fwd_(std::move(other.kernel_fwd_)),
-      kernel_back_(std::move(other.kernel_back_)) {
-  }
+      kernel_back_(std::move(other.kernel_back_)) {}
 
+  size_t fan_in_size(size_t i) const { return in_shape()[i].width_; }
 
-  size_t fan_in_size(size_t i) const {
-    return in_shape()[i].width_;
-  }
-
-  size_t fan_out_size(size_t i) const {
-    return in_shape()[i].height_;
-  }
+  size_t fan_out_size(size_t i) const { return in_shape()[i].height_; }
 
   std::vector<index3d<size_t>> in_shape() const {
     if (params_.has_bias_) {
-      return {
-        index3d<size_t>(params_.in_size_, 1, 1),   // x
-        index3d<size_t>(params_.out_size_, 1, 1),  // h(t-1)
-        index3d<size_t>(params_.in_size_, params_.out_size_, 1),   // U
-        index3d<size_t>(params_.out_size_, params_.out_size_, 1),  // W
-        index3d<size_t>(params_.out_size_, params_.out_size_, 1),  // V
-        index3d<size_t>(params_.out_size_, 1, 1),                  // b
-        index3d<size_t>(params_.out_size_, 1, 1)};                 // c
+      return {index3d<size_t>(params_.in_size_, 1, 1),   // x
+              index3d<size_t>(params_.out_size_, 1, 1),  // h(t-1)
+              index3d<size_t>(params_.in_size_, params_.out_size_, 1),   // U
+              index3d<size_t>(params_.out_size_, params_.out_size_, 1),  // W
+              index3d<size_t>(params_.out_size_, params_.out_size_, 1),  // V
+              index3d<size_t>(params_.out_size_, 1, 1),                  // b
+              index3d<size_t>(params_.out_size_, 1, 1)};                 // c
     } else {
-      return {
-        index3d<size_t>(params_.in_size_, 1, 1),   // x
-        index3d<size_t>(params_.out_size_, 1, 1),  // h(t-1)
-        index3d<size_t>(params_.in_size_, params_.out_size_, 1),    // U
-        index3d<size_t>(params_.out_size_, params_.out_size_, 1),   // W
-        index3d<size_t>(params_.out_size_, params_.out_size_, 1)};  // V
+      return {index3d<size_t>(params_.in_size_, 1, 1),   // x
+              index3d<size_t>(params_.out_size_, 1, 1),  // h(t-1)
+              index3d<size_t>(params_.in_size_, params_.out_size_, 1),    // U
+              index3d<size_t>(params_.out_size_, params_.out_size_, 1),   // W
+              index3d<size_t>(params_.out_size_, params_.out_size_, 1)};  // V
     }
   }
 
@@ -159,16 +149,15 @@ class recurrent_cell : public cell {
     params_.activation_ = std::shared_ptr<activation_layer>(activation);
   }
 
-  void init_backend(Device* device) {
-      CNN_UNREFERENCED_PARAMETER(cell::get_backend_type());
-      core::OpKernelConstruction ctx =
-              core::OpKernelConstruction(device, &params_);
-      kernel_fwd_.reset(new RecurrentCellOp(ctx));
-      kernel_back_.reset(new RecurrentCellGradOp(ctx));
+  void init_backend(Device *device) {
+    CNN_UNREFERENCED_PARAMETER(cell::get_backend_type());
+    core::OpKernelConstruction ctx =
+      core::OpKernelConstruction(device, &params_);
+    kernel_fwd_.reset(new RecurrentCellOp(ctx));
+    kernel_back_.reset(new RecurrentCellGradOp(ctx));
   }
 
  private:
-
   /* The layer parameters */
   recurrent_cell_params params_;
 
