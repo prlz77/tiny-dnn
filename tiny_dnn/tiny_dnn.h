@@ -100,7 +100,7 @@ using fc = tiny_dnn::fully_connected_layer;
 
 using dense = tiny_dnn::fully_connected_layer;
 
-//using recurrent_cell = tiny_dnn::recurrent_cell_layer;
+// using recurrent_cell = tiny_dnn::recurrent_cell_layer;
 
 #ifdef CNN_USE_GEMMLOWP
 using q_fc = tiny_dnn::quantized_fully_connected_layer;

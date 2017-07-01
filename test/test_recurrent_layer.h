@@ -8,8 +8,8 @@
 #pragma once
 #include "gtest/gtest.h"
 #include "testhelper.h"
-#include "tiny_dnn/tiny_dnn.h"
 #include "tiny_dnn/layers/recurrent_cell.h"
+#include "tiny_dnn/tiny_dnn.h"
 
 using namespace tiny_dnn::activation;
 
@@ -19,7 +19,8 @@ TEST(recurrent, train) {
   network<sequential> nn;
   adagrad optimizer;
 
-  nn << recurrent_layer(recurrent_cell(3, 2, true, new tanh_layer), 1) << sigmoid();
+  nn << recurrent_layer(new recurrent_cell(3, 2, true, new tanh_layer), 1)
+     << sigmoid();
 
   vec_t a(3), t(2), a2(3), t2(2);
 
@@ -61,7 +62,7 @@ TEST(recurrent, train_different_batches) {
     network<sequential> nn;
     adagrad optimizer;
 
-    nn << recurrent_layer(recurrent_cell(3, 2),1) << sigmoid();
+    nn << recurrent_layer(new recurrent_cell(3, 2), 1) << sigmoid();
 
     vec_t a(3), t(2), a2(3), t2(2);
 
@@ -100,8 +101,8 @@ TEST(recurrent, train2) {
   network<sequential> nn;
   gradient_descent optimizer;
 
-  nn << recurrent_layer(recurrent_cell(4, 6),1) << tanh() << recurrent_layer(recurrent_cell(6, 3),1)
-     << tanh();
+  nn << recurrent_layer(new recurrent_cell(4, 6), 1) << tanh()
+     << recurrent_layer(new recurrent_cell(6, 3), 1) << tanh();
 
   vec_t a(4, 0.0), t(3, 0.0), a2(4, 0.0), t2(3, 0.0);
 
@@ -137,7 +138,7 @@ TEST(recurrent, train2) {
 
 TEST(recurrent, gradient_check) {
   network<sequential> nn;
-  nn << recurrent_layer(recurrent_cell(50, 10),1) << tanh();
+  nn << recurrent_layer(new recurrent_cell(50, 10), 1) << tanh();
 
   const auto test_data = generate_gradient_check_data(nn.in_data_size());
   nn.init_weight();
@@ -146,8 +147,8 @@ TEST(recurrent, gradient_check) {
 }
 
 TEST(recurrent, read_write) {
-  recurrent_layer l1(recurrent_cell(100, 100),1);
-  recurrent_layer l2(recurrent_cell(100, 100),1);
+  recurrent_layer l1(new recurrent_cell(100, 100), 1);
+  recurrent_layer l2(new recurrent_cell(100, 100), 1);
 
   l1.setup(true);
   l2.setup(true);
@@ -156,7 +157,7 @@ TEST(recurrent, read_write) {
 }
 
 TEST(recurrent, forward) {
-  recurrent_layer l(recurrent_cell(4, 2),1);
+  recurrent_layer l(new recurrent_cell(4, 2), 1);
   EXPECT_EQ(l.in_channels(), size_t(7));  // in, h, U, W, V, b and c
 
   l.weight_init(weight_init::constant(1.0));
@@ -174,7 +175,7 @@ TEST(recurrent, forward) {
 }
 
 TEST(recurrent, forward_nobias) {
-  recurrent_layer l(recurrent_cell(4, 2, false),1);
+  recurrent_layer l(new recurrent_cell(4, 2, false), 1);
   EXPECT_EQ(l.in_channels(), size_t(5));  // in, h, U, W, V, b and c
 
   l.weight_init(weight_init::constant(1.0));
@@ -190,4 +191,4 @@ TEST(recurrent, forward_nobias) {
   }
 }
 
-}  // namespace tiny-dnn
+}  // namespace tiny_dnn

@@ -58,7 +58,7 @@ class OpKernelContext {
       out_data_(nullptr),
       out_grad_(nullptr),
       in_grad_(nullptr) {
-    op_params_ = std::unique_ptr<OpParams>(new OpParams());
+    op_params_ = std::make_unique<OpParams>();
   }
 
   void set_in_out(const std::vector<tensor_t *> &in_data,
