@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2013, Taiga Nomi
+    Copyright (c) 2013, Taiga Nomi and the respective contributors
     All rights reserved.
 
     Use of this source code is governed by a BSD-style license that can be found
@@ -17,11 +17,11 @@
 
 namespace tiny_dnn {
 
-TEST(recurrent_cell, train) {
+TEST(rnn, train) {
   network<sequential> nn;
   adagrad optimizer;
 
-  nn << recurrent_cell_layer(3, 2, true, new tanh_layer) << sigmoid();
+  nn << recurrent_layer(rnn(3, 2), 1) << sigmoid();
 
   vec_t a(3), t(2), a2(3), t2(2);
 
@@ -55,7 +55,7 @@ TEST(recurrent_cell, train) {
   EXPECT_NEAR(predicted[1], t2[1], 1e-5);
 }
 
-TEST(recurrent_cell, train_different_batches) {
+TEST(rnn, train_different_batches) {
   auto batch_sizes = {2, 7, 10, 12};
   size_t data_size = std::accumulate(batch_sizes.begin(), batch_sizes.end(), 1,
                                      std::multiplies<size_t>());
@@ -63,7 +63,7 @@ TEST(recurrent_cell, train_different_batches) {
     network<sequential> nn;
     adagrad optimizer;
 
-    nn << recurrent_cell_layer(3, 2) << sigmoid();
+    nn << recurrent_layer(rnn(3, 2), 1) << sigmoid();
 
     vec_t a(3), t(2), a2(3), t2(2);
 
@@ -98,11 +98,11 @@ TEST(recurrent_cell, train_different_batches) {
   }
 }
 
-TEST(recurrent_cell, train2) {
+TEST(rnn, train2) {
   network<sequential> nn;
   gradient_descent optimizer;
 
-  nn << recurrent_cell_layer(4, 6) << tanh_layer() << recurrent_cell_layer(6, 3)
+  nn << recurrent_layer(rnn(4, 6), 1) << tanh_layer() << recurrent_layer(rnn(6, 3), 1)
      << tanh_layer();
 
   vec_t a(4, 0.0), t(3, 0.0), a2(4, 0.0), t2(3, 0.0);
@@ -137,9 +137,9 @@ TEST(recurrent_cell, train2) {
   EXPECT_NEAR(predicted[1], t2[1], 1e-4);
 }
 
-TEST(recurrent_cell, gradient_check) {
+TEST(rnn, gradient_check) {
   network<sequential> nn;
-  nn << recurrent_cell_layer(50, 10) << tanh_layer();
+  nn << recurrent_layer(rnn(50, 10), 1) << tanh_layer();
 
   const auto test_data = generate_gradient_check_data(nn.in_data_size());
   nn.init_weight();
@@ -147,9 +147,9 @@ TEST(recurrent_cell, gradient_check) {
                                      epsilon<float_t>(), GRAD_CHECK_ALL));
 }
 
-TEST(recurrent_cell, read_write) {
-  recurrent_cell_layer l1(100, 100);
-  recurrent_cell_layer l2(100, 100);
+TEST(rnn, read_write) {
+  recurrent_layer l1(rnn(100, 100), 1);
+  recurrent_layer l2(rnn(100, 100), 1);
 
   l1.setup(true);
   l2.setup(true);
@@ -157,8 +157,8 @@ TEST(recurrent_cell, read_write) {
   serialization_test(l1, l2);
 }
 
-TEST(recurrent_cell, forward) {
-  recurrent_cell_layer l(4, 2);
+TEST(rnn, forward) {
+  recurrent_layer l(rnn(4, 2), 1);
   EXPECT_EQ(l.in_channels(), size_t(7));  // in, h, U, W, V, b and c
 
   l.weight_init(weight_init::constant(1.0));
@@ -175,8 +175,10 @@ TEST(recurrent_cell, forward) {
   }
 }
 
-TEST(recurrent_cell, forward_nobias) {
-  recurrent_cell_layer l(4, 2, false);
+TEST(rnn, forward_nobias) {
+  rnn_cell_parameters params;
+  params.has_bias = false;
+  recurrent_layer l(rnn(4, 2, params), 1);
   EXPECT_EQ(l.in_channels(), size_t(5));  // in, h, U, W, V, b and c
 
   l.weight_init(weight_init::constant(1.0));

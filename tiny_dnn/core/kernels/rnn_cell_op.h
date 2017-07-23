@@ -8,7 +8,7 @@
 #pragma once
 
 #include "tiny_dnn/core/framework/op_kernel.h"
-#include "tiny_dnn/core/kernels/recurrent_cell_op_internal.h"
+#include "tiny_dnn/core/kernels/rnn_cell_op_internal.h"
 
 namespace tiny_dnn {
 
@@ -18,7 +18,7 @@ class RecurrentCellOp : public core::OpKernel {
     : core::OpKernel(context) {}
 
   void compute(core::OpKernelContext &context) override {
-    auto params = OpKernel::params_->recurrent_cell();
+    auto params = OpKernel::params_->rnn_cell();
 
     // incomimg/outcoming data
     const tensor_t &in_data = context.input(0);
@@ -40,11 +40,11 @@ class RecurrentCellOp : public core::OpKernel {
     const core::backend_t engine = context.engine();
 
     if (engine == core::backend_t::internal || engine == core::backend_t::avx) {
-      kernels::recurrent_cell_op_internal(
-        in_data, prev_h, U[0], W[0], V[0],
-        params.has_bias_ ? (*bias)[0] : vec_t(),
-        params.has_bias_ ? (*c)[0] : vec_t(), out_data, next_h, params,
-        context.parallelize());
+      kernels::rnn_cell_op_internal(in_data, prev_h, U[0], W[0], V[0],
+                                    params.has_bias_ ? (*bias)[0] : vec_t(),
+                                    params.has_bias_ ? (*c)[0] : vec_t(),
+                                    out_data, next_h, params,
+                                    context.parallelize());
     } else {
       throw nn_error("Not supported engine: " + to_string(engine));
     }

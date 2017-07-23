@@ -9,7 +9,7 @@
 
 #include "tiny_dnn/core/framework/op_kernel.h"
 
-#include "tiny_dnn/core/kernels/recurrent_cell_op_internal.h"
+#include "tiny_dnn/core/kernels/rnn_cell_op_internal.h"
 
 namespace tiny_dnn {
 
@@ -19,7 +19,7 @@ class RecurrentCellGradOp : public core::OpKernel {
     : core::OpKernel(context) {}
 
   void compute(core::OpKernelContext &context) override {
-    auto params = OpKernel::params_->recurrent_cell();
+    auto params = OpKernel::params_->rnn_cell();
     // incoming/outcoming data
     const tensor_t &prev_out = context.input(0);
     const tensor_t &h        = context.input(1);
@@ -44,7 +44,7 @@ class RecurrentCellGradOp : public core::OpKernel {
 
     // call the algorithm depending on the selected engine type
 
-    kernels::recurrent_cell_op_internal(
+    kernels::rnn_cell_op_internal(
       prev_out, h, U[0], W[0], V[0], dU, dW, dV, params.has_bias_ ? *db : dummy,
       params.has_bias_ ? *dc : dummy, curr_output_delta, curr_state_delta,
       prev_output_delta, prev_state_delta, out_state, params,
