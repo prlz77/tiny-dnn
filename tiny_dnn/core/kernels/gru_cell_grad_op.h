@@ -22,12 +22,12 @@ class GRUCellGradOp : public core::OpKernel {
     // incoming/outcoming data
     const tensor_t &x      = context.input(0);  // x
     const tensor_t &h_prev = context.input(1);  // h(t-1)
-    tensor_t &W_x2z        = context.input(2);  // W[x->z]
-    tensor_t &W_x2r        = context.input(3);  // W[x->r]
-    tensor_t &W_x2h        = context.input(4);  // W[x->h]
-    tensor_t &W_hr2c       = context.input(5);  // W[hr2c]
-    tensor_t &W_s2z        = context.input(6);  // W[s->z]
-    tensor_t &W_s2r        = context.input(7);  // W[s->r]
+    const tensor_t &W_x2z        = context.input(2);  // W[x->z]
+    const tensor_t &W_x2r        = context.input(3);  // W[x->r]
+    const tensor_t &W_x2h        = context.input(4);  // W[x->h]
+    const tensor_t &W_hr2c       = context.input(5);  // W[hr2c]
+    const tensor_t &W_s2z        = context.input(6);  // W[s->z]
+    const tensor_t &W_s2r        = context.input(7);  // W[s->r]
 
     tensor_t &d_x_prev = context.input_grad(0);  // dx
     tensor_t &d_h_prev = context.input_grad(1);  // dh_prev

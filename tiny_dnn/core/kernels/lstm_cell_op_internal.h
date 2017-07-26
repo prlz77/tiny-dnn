@@ -112,14 +112,14 @@ inline void lstm_cell_op_internal(const tensor_t &x,
 inline void lstm_cell_op_internal(const tensor_t &x,
                                   const tensor_t &h_prev,
                                   const tensor_t &c_prev,
-                                  vec_t &W_x2i,
-                                  vec_t &W_x2f,
-                                  vec_t &W_x2c,
-                                  vec_t &W_x2o,
-                                  vec_t &W_h2i,
-                                  vec_t &W_h2f,
-                                  vec_t &W_h2c,
-                                  vec_t &W_h2o,
+                                  const vec_t &W_x2i,
+                                  const vec_t &W_x2f,
+                                  const vec_t &W_x2c,
+                                  const vec_t &W_x2o,
+                                  const vec_t &W_h2i,
+                                  const vec_t &W_h2f,
+                                  const vec_t &W_h2c,
+                                  const vec_t &W_h2o,
                                   tensor_t &dW_x2i,
                                   tensor_t &dW_x2f,
                                   tensor_t &dW_x2c,
@@ -139,7 +139,6 @@ inline void lstm_cell_op_internal(const tensor_t &x,
                                   tensor_t d_h_prev,
                                   tensor_t d_c_prev,
                                   const tensor_t o_next,
-                                  const tensor_t h_next,
                                   const tensor_t c_next,
                                   const tensor_t pre_i,
                                   const tensor_t pre_f,
@@ -162,11 +161,11 @@ inline void lstm_cell_op_internal(const tensor_t &x,
          for (size_t sample = r.begin(); sample < r.end(); sample++) {
            const vec_t &d_h_next_ = d_h_next[sample];
            const vec_t &d_o_next_ = d_o_next[sample];
-           const vec_t &h_next_   = h_next[sample];
            const vec_t &c_next_   = c_next[sample];
            const vec_t &c_prev_   = c_prev[sample];
            const vec_t &o_next_   = o_next[sample];
            const vec_t &x_        = x[sample];
+           const vec_t &h_prev_   = h_prev[sample];
            const vec_t &pre_i_    = pre_i[sample];
            const vec_t &pre_f_    = pre_f[sample];
            const vec_t &pre_z_    = pre_o[sample];
@@ -209,7 +208,7 @@ inline void lstm_cell_op_internal(const tensor_t &x,
            }
            for (size_t o = 0; o < out_size; o++) {
              for (size_t o2 = 0; o2 < out_size; o2++) {
-               dW_h2o_[o * out_size + o2] = h_next_[o] * aux1[o2];
+               dW_h2o_[o * out_size + o2] = h_prev_[o] * aux1[o2];
              }
            }
            if (has_bias) {
@@ -252,7 +251,7 @@ inline void lstm_cell_op_internal(const tensor_t &x,
            }
            for (size_t o = 0; o < out_size; o++) {
              for (size_t o2 = 0; o2 < out_size; o2++) {
-               dW_h2i_[o * out_size + o2] = h_next_[o2] * aux2[o2];
+               dW_h2i_[o * out_size + o2] = h_prev_[o2] * aux2[o2];
              }
            }
            if (has_bias) {
@@ -285,7 +284,7 @@ inline void lstm_cell_op_internal(const tensor_t &x,
            }
            for (size_t o = 0; o < out_size; o++) {
              for (size_t o2 = 0; o2 < out_size; o2++) {
-               dW_h2c_[o * out_size + o2] = h_next_[o2] * aux2[o2];
+               dW_h2c_[o * out_size + o2] = h_prev_[o2] * aux2[o2];
              }
            }
            if (has_bias) {
@@ -319,7 +318,7 @@ inline void lstm_cell_op_internal(const tensor_t &x,
            }
            for (size_t o = 0; o < out_size; o++) {
              for (size_t o2 = 0; o2 < out_size; o2++) {
-               dW_h2f_[o * out_size + o2] = h_next_[o2] * aux2[o2];
+               dW_h2f_[o * out_size + o2] = h_prev_[o2] * aux2[o2];
              }
            }
            if (has_bias) {

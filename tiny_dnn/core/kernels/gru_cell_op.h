@@ -64,7 +64,7 @@ class GRUCellOp : public core::OpKernel {
         x, h_prev, W_x2z[0], W_x2r[0], W_x2h[0], W_hr2c[0], W_s2z[0], W_s2r[0],
         params.has_bias_ ? (*b_2z)[0] : vec_t(),
         params.has_bias_ ? (*b_2r)[0] : vec_t(),
-        params.has_bias_ ? (*b_2h)[0] : vec_t(), out, h, r, z, pre_h, hr, pre_r,
+        params.has_bias_ ? (*b_2h)[0] : vec_t(), out, h, r, z, pre_h, pre_r, hr,
         pre_z, post_z, params, context.parallelize());
     } else {
       throw nn_error("Not supported engine: " + to_string(engine));

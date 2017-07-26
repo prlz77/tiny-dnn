@@ -144,7 +144,7 @@ t2[0] = 0.6; t2[1] = 0.1; t2[2] = 0.1; // 0.0 is difficult due to sigmoid.
 
 TEST(gru, gradient_check) {
   network<sequential> nn;
-  nn << recurrent_layer(gru(50, 10), 1) << tanh_layer();
+  nn << recurrent_layer(gru(50, 10), 1);
 
   const auto test_data = generate_gradient_check_data(nn.in_data_size());
   nn.init_weight();

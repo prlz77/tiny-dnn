@@ -23,14 +23,14 @@ class LSTMCellGradOp : public core::OpKernel {
     const tensor_t &x      = context.input(0);   // x
     const tensor_t &h_prev = context.input(1);   // h(t-1)
     const tensor_t &c_prev = context.input(2);   // c(t-1)
-    tensor_t &W_x2i        = context.input(3);   // W[x->i]
-    tensor_t &W_x2f        = context.input(4);   // W[x->f]
-    tensor_t &W_x2c        = context.input(5);   // W[x->c]
-    tensor_t &W_x2o        = context.input(6);   // W[x->o]
-    tensor_t &W_h2i        = context.input(7);   // W[h->i]
-    tensor_t &W_h2f        = context.input(8);   // W[h->f]
-    tensor_t &W_h2c        = context.input(9);   // W[h->c]
-    tensor_t &W_h2o        = context.input(10);  // W[h->o]
+    const tensor_t &W_x2i        = context.input(3);   // W[x->i]
+    const tensor_t &W_x2f        = context.input(4);   // W[x->f]
+    const tensor_t &W_x2c        = context.input(5);   // W[x->c]
+    const tensor_t &W_x2o        = context.input(6);   // W[x->o]
+    const tensor_t &W_h2i        = context.input(7);   // W[h->i]
+    const tensor_t &W_h2f        = context.input(8);   // W[h->f]
+    const tensor_t &W_h2c        = context.input(9);   // W[h->c]
+    const tensor_t &W_h2o        = context.input(10);  // W[h->o]
 
     tensor_t &d_o_prev = context.input_grad(0);   // dx
     tensor_t &d_h_prev = context.input_grad(1);   // dh_prev
@@ -53,7 +53,6 @@ class LSTMCellGradOp : public core::OpKernel {
     const tensor_t &d_c_next = context.output_grad(2);  // d_c_next
 
     const tensor_t &o_next = context.output(0);
-    const tensor_t &h_next = context.output(1);
     const tensor_t &c_next = context.output(2);
     const tensor_t &pre_i  = context.output(3);
     const tensor_t &pre_f  = context.output(4);
@@ -78,7 +77,7 @@ class LSTMCellGradOp : public core::OpKernel {
       dW_h2f, dW_h2c, dW_h2o, params.has_bias_ ? *db_2i : dummy,
       params.has_bias_ ? *db_2f : dummy, params.has_bias_ ? *db_2c : dummy,
       params.has_bias_ ? *db_2o : dummy, d_o_next, d_h_next, d_c_next, d_o_prev,
-      d_h_prev, d_c_prev, o_next, h_next, c_next, pre_i, pre_f, pre_z, pre_o,
+      d_h_prev, d_c_prev, o_next, c_next, pre_i, pre_f, pre_z, pre_o,
       post_i, post_f, post_z, post_c, params, context.parallelize());
   }
 };

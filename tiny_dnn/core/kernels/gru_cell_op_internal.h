@@ -83,11 +83,11 @@ inline void gru_cell_op_internal(const tensor_t &x,
            for (size_t o = 0; o < out_size; o++) {  // from
              out_[o]    = h_prev_[o] * post_z_[o];
              z_neg_[o]  = 1 - post_z_[o];
-             float_t hr = h_prev_[o] * post_r_[o];
+             float_t local_hr = h_prev_[o] * post_r_[o];
              for (size_t o_2 = 0; o_2 < out_size; o_2++) {  // to
-               pre_h_[o_2] += W_hr2c[o * out_size + o_2] * hr;
+               pre_h_[o_2] += W_hr2c[o * out_size + o_2] * local_hr;
              }
-             hr_[o] = hr;
+             hr_[o] = local_hr;
            }
            tanh->forward_activation(pre_h_, post_h_);
            for (size_t o = 0; o < out_size; o++) {
@@ -100,12 +100,12 @@ inline void gru_cell_op_internal(const tensor_t &x,
 
 inline void gru_cell_op_internal(const tensor_t &x,
                                  const tensor_t &h_prev,
-                                 vec_t &W_x2z,
-                                 vec_t &W_x2r,
-                                 vec_t &W_x2h,
-                                 vec_t &W_hr2c,
-                                 vec_t &W_s2z,
-                                 vec_t &W_s2r,
+                                 const vec_t &W_x2z,
+                                 const vec_t &W_x2r,
+                                 const vec_t &W_x2h,
+                                 const vec_t &W_hr2c,
+                                 const vec_t &W_s2z,
+                                 const vec_t &W_s2r,
                                  tensor_t &dW_x2z,
                                  tensor_t &dW_x2r,
                                  tensor_t &dW_x2h,
@@ -115,17 +115,17 @@ inline void gru_cell_op_internal(const tensor_t &x,
                                  tensor_t &db_2z,
                                  tensor_t &db_2r,
                                  tensor_t &db_2h,
-                                 const tensor_t d_o_next,
-                                 tensor_t d_x_prev,
-                                 tensor_t d_h_prev,
-                                 const tensor_t post_h,
-                                 const tensor_t post_r,
-                                 const tensor_t post_z,
-                                 const tensor_t pre_h,
-                                 const tensor_t hr,
-                                 const tensor_t pre_r,
-                                 const tensor_t pre_z,
-                                 const tensor_t z_neg,
+                                 const tensor_t &d_o_next,
+                                 tensor_t &d_x_prev,
+                                 tensor_t &d_h_prev,
+                                 const tensor_t &post_h,
+                                 const tensor_t &post_r,
+                                 const tensor_t &post_z,
+                                 const tensor_t &pre_h,
+                                 const tensor_t &hr,
+                                 const tensor_t &pre_r,
+                                 const tensor_t &pre_z,
+                                 const tensor_t &z_neg,
                                  const core::gru_cell_params &params,
                                  const bool layer_parallelize) {
   for_(
@@ -165,7 +165,7 @@ inline void gru_cell_op_internal(const tensor_t &x,
 
         // do -> ds(t-1), do -> dz
         for (size_t o = 0; o < out_size; o++) {
-          d_h_prev_[o] += d_o_next_[o] * post_z_[o];
+          d_h_prev_[o] = d_o_next_[o] * post_z_[o];
           aux1[o] = d_o_next_[o] * (h_prev_[o] - post_h_[o]);  // aux1 = dz
         }
         sigmoid->backward_activation(pre_z_, post_z_, aux1, aux1);
@@ -220,8 +220,7 @@ inline void gru_cell_op_internal(const tensor_t &x,
         }
         // dh_prev -> dWhr2c
         for (size_t o = 0; o < out_size; o++) {
-          vectorize::muladd(&aux1[0], hr_[o], out_size,
-                            &dW_hr2c_[o * out_size]);
+          vectorize::muladd(&aux1[0], hr_[o], out_size, &dW_hr2c_[o * out_size]);
         }
         // dWhr -> dhr
         for (size_t o = 0; o < out_size; o++) {
@@ -229,7 +228,7 @@ inline void gru_cell_op_internal(const tensor_t &x,
         }
         // dhr -> dh_prev
         for (size_t o = 0; o < out_size; o++) {
-          d_h_prev_[o] = aux1[o] * post_r_[o];
+          d_h_prev_[o] += aux1[o] * post_r_[o];
         }
         // dhr -> dr
         for (size_t o = 0; o < out_size; o++) {
